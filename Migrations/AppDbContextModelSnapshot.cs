@@ -44,7 +44,7 @@ namespace FPTRewardSystem.API.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("MerchantProfile");
+                    b.ToTable("MerchantProfile", (string)null);
 
                     b.HasData(
                         new
@@ -84,7 +84,7 @@ namespace FPTRewardSystem.API.Migrations
 
                     b.HasIndex("SenderWalletId");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.User", b =>
@@ -109,7 +109,7 @@ namespace FPTRewardSystem.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("User");
+                    b.ToTable("User", (string)null);
 
                     b.HasData(
                         new
@@ -152,7 +152,7 @@ namespace FPTRewardSystem.API.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Wallets");
+                    b.ToTable("Wallets", (string)null);
 
                     b.HasData(
                         new

@@ -5,9 +5,12 @@ namespace FPTRewardSystem.API.Data
 {
     public class AppDbContext : DbContext
     {
+        // Constructor tiếp nhận DbContextOptions để DI Container cấu hình từ bên ngoài
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        // Định nghĩa các tập thực thể (Entity Sets) tương ứng với các bảng trong Database
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<User> Users { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Cấu hình quan hệ cho Transaction (Vì có 2 liên kết đến cùng bảng Wallet)
@@ -28,6 +31,9 @@ namespace FPTRewardSystem.API.Data
                 .WithOne(u => u.MerchantProfile)
                 .HasForeignKey<MerchantProfile>(mp => mp.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<User>().ToTable("User");
+
 
             // Seed data
             // Trong hàm OnModelCreating của AppDbContext.cs

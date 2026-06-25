@@ -1,6 +1,9 @@
 ﻿using FPTRewardSystem.API.Data;
 using FPTRewardSystem.API.Dtos;
+using FPTRewardSystem.API.Exceptions;
+using FPTRewardSystem.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace FPTRewardSystem.API.Services
 {
@@ -23,6 +26,36 @@ namespace FPTRewardSystem.API.Services
                     Role = u.Role
                 })
                 .ToListAsync();
+        }
+
+        public async Task<UserResponseDto> CreateUserAsync(CreateUserRequestDto requestDto)
+        {
+            var isEmailExist = await _context.Users.AnyAsync(u => u.Email == requestDto.Email);
+            if (isEmailExist)
+            {
+                throw new ConflictException("Email nay da duoc su dung trong he thong");
+            }
+            // Trước khi ánh xạ, chúng ta tiến hành băm mật khẩu của User gửi lên
+            string securedPasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.PassWord);
+            var newUser = new User
+            {
+                FullName = requestDto.FullName,
+                Email = requestDto.Email,
+                PasswordHash = securedPasswordHash,
+                Role = UserRole.Employee
+
+            };
+            // Đánh dấu thêm mới vào bộ nhớ
+            _context.Users.Add(newUser);
+            // Ghi dữ liệu thực tế xuống Database
+            await _context.SaveChangesAsync();
+            return new UserResponseDto
+            {
+                Id = newUser.Id,
+                Email = newUser.Email,
+                FullName = newUser.FullName,
+                Role = newUser.Role
+            };
         }
     }
 }

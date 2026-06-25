@@ -9,7 +9,6 @@ namespace FPTRewardSystem.API.Controllers
 {
     [ApiController]
     [Route("api/v1/[controller]")] // Duong dan se la: api/v1/user
-    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -18,12 +17,21 @@ namespace FPTRewardSystem.API.Controllers
         {
             _userService = userService;
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<List<UserResponseDto>>> GetAll()
         {
             // Controller giờ chỉ làm nhiệm vụ gọi Service và trả kết quả
             var result = _userService.GetAllUsersAsync();
             return Ok(result);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<UserResponseDto>> Create([FromBody] CreateUserRequestDto requestDto)
+        {
+            var result = await _userService.CreateUserAsync(requestDto);
+            // Trả về HTTP Status Code 201 Created chuẩn RESTful
+            return CreatedAtAction(nameof(GetAll), new { id = result.Id }, result);
         }
     }
 }

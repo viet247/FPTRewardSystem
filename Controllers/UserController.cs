@@ -35,7 +35,7 @@ namespace FPTRewardSystem.API.Controllers
         }
 
         [HttpPut("{id}")]// {id} là tham số động trên URL (Route Parameter)
-        public async Task<IActionResult> Update(Guid id, [FromBody] CreateUserRequestDto requestDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserRequestDto requestDto)
         {
             await _userService.UpdateUserAsync(id, requestDto);
             return NoContent();

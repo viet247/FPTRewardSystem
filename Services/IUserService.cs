@@ -9,6 +9,6 @@ namespace FPTRewardSystem.API.Services
         //giúp code linh hoạt và dễ viết Unit Test sau này.
         Task<List<UserResponseDto>> GetAllUsersAsync();
         Task<UserResponseDto> CreateUserAsync(CreateUserRequestDto requestDto);
-        Task<UserResponseDto> UpdateUserAsync(Guid id, CreateUserRequestDto requestDto);
+        Task UpdateUserAsync(Guid id, UpdateUserRequestDto requestDto);
         }
 }

@@ -58,17 +58,15 @@ namespace FPTRewardSystem.API.Services
             };
         }
 
-        public async Task UpdateUserAsync(Guid id, CreateUserRequestDto requestDto)
+        public async Task UpdateUserAsync(Guid id, UpdateUserRequestDto requestDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null)
             {
                 throw new NotFoundException($"Không tìm thấy User có id: {id}");
             }
-            string securedPasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.PassWord);
             user.FullName = requestDto.FullName;
             user.Email = requestDto.Email;
-            user.PasswordHash = securedPasswordHash;
             await _context.SaveChangesAsync();
         }
     }

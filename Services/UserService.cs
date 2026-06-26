@@ -45,7 +45,7 @@ namespace FPTRewardSystem.API.Services
                 Role = UserRole.Employee
 
             };
-            // Đánh dấu thêm mới vào bộ nhớ
+            // Đánh dấu thêmp mới vào bộ nhớ
             _context.Users.Add(newUser);
             // Ghi dữ liệu thực tế xuống Database
             await _context.SaveChangesAsync();
@@ -56,6 +56,20 @@ namespace FPTRewardSystem.API.Services
                 FullName = newUser.FullName,
                 Role = newUser.Role
             };
+        }
+
+        public async Task UpdateUserAsync(Guid id, CreateUserRequestDto requestDto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+            {
+                throw new NotFoundException($"Không tìm thấy User có id: {id}");
+            }
+            string securedPasswordHash = BCrypt.Net.BCrypt.HashPassword(requestDto.PassWord);
+            user.FullName = requestDto.FullName;
+            user.Email = requestDto.Email;
+            user.PasswordHash = securedPasswordHash;
+            await _context.SaveChangesAsync();
         }
     }
 }

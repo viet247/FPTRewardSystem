@@ -22,7 +22,7 @@ namespace FPTRewardSystem.API.Controllers
         public async Task<ActionResult<List<UserResponseDto>>> GetAll()
         {
             // Controller giờ chỉ làm nhiệm vụ gọi Service và trả kết quả
-            var result = _userService.GetAllUsersAsync();
+            var result = await _userService.GetAllUsersAsync();
             return Ok(result);
         }
 
@@ -32,6 +32,13 @@ namespace FPTRewardSystem.API.Controllers
             var result = await _userService.CreateUserAsync(requestDto);
             // Trả về HTTP Status Code 201 Created chuẩn RESTful
             return CreatedAtAction(nameof(GetAll), new { id = result.Id }, result);
+        }
+
+        [HttpPut("{id}")]// {id} là tham số động trên URL (Route Parameter)
+        public async Task<IActionResult> Update(Guid id, [FromBody] CreateUserRequestDto requestDto)
+        {
+            await _userService.UpdateUserAsync(id, requestDto);
+            return NoContent();
         }
     }
 }

@@ -20,6 +20,18 @@ namespace FPTRewardSystem.API.Exceptions
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
                 return true; // Báo hiệu đã xử lý xong lỗi này
             }
+            if (exception is NotFoundException)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "Not found",
+                    Detail = exception.Message
+                };
+                await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                return true; // Báo hiệu đã xử lý xong lỗi này
+            }
             return false;
         }
     }

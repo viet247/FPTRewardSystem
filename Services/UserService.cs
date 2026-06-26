@@ -45,7 +45,7 @@ namespace FPTRewardSystem.API.Services
                 Role = UserRole.Employee
 
             };
-            // Đánh dấu thêmp mới vào bộ nhớ
+            // Đánh dấu thêm mới vào bộ nhớ
             _context.Users.Add(newUser);
             // Ghi dữ liệu thực tế xuống Database
             await _context.SaveChangesAsync();

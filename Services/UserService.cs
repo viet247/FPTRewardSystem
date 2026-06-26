@@ -57,5 +57,17 @@ namespace FPTRewardSystem.API.Services
                 Role = newUser.Role
             };
         }
+
+        public async Task UpdateUserAsync(Guid id, UpdateUserRequestDto requestDto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+            {
+                throw new NotFoundException($"Không tìm thấy User có id: {id}");
+            }
+            user.FullName = requestDto.FullName;
+            user.Email = requestDto.Email;
+            await _context.SaveChangesAsync();
+        }
     }
 }

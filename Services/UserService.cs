@@ -69,5 +69,14 @@ namespace FPTRewardSystem.API.Services
             user.Email = requestDto.Email;
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteUserAsync(Guid id)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (user == null)
+                throw new NotFoundException($"Không tìm thấy User có id: {id}");
+            _context.Remove(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }

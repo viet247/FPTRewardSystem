@@ -40,5 +40,12 @@ namespace FPTRewardSystem.API.Controllers
             await _userService.UpdateUserAsync(id, requestDto);
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await _userService.DeleteUserAsync(id);
+            return NoContent();
+        }
     }
 }

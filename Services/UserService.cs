@@ -15,18 +15,6 @@ namespace FPTRewardSystem.API.Services
         {
             _context = context;
         }
-        public async Task<List<UserResponseDto>> GetAllUsersAsync()
-        {
-            return await _context.Users
-                .Select(u => new UserResponseDto
-                {
-                    Id = u.Id,
-                    Email = u.Email,
-                    FullName = u.FullName,
-                    Role = u.Role
-                })
-                .ToListAsync();
-        }
 
         public async Task<UserResponseDto> CreateUserAsync(CreateUserRequestDto requestDto)
         {
@@ -77,6 +65,20 @@ namespace FPTRewardSystem.API.Services
                 throw new NotFoundException($"Không tìm thấy User có id: {id}");
             _context.Remove(user);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<UserResponseDto>> GetUsersAsync(UserSearchQueryDto queryDto)
+        {
+            return await _context.Users.Where(u => string.IsNullOrEmpty(queryDto.SearchTerm) || u.FullName.Contains(queryDto.SearchTerm) || u.Email.Contains(queryDto.SearchTerm))
+                                       .Skip((queryDto.PageNumber - 1) * queryDto.PageSize).Take(queryDto.PageSize)
+                                       .Select(u => new UserResponseDto
+                                       {
+                                           Id = u.Id,
+                                           Email = u.Email,
+                                           FullName = u.FullName,
+                                           Role = u.Role
+                                       })
+                                       .ToListAsync();
         }
     }
 }

@@ -15,18 +15,6 @@ namespace FPTRewardSystem.API.Services
         {
             _context = context;
         }
-        public async Task<List<UserResponseDto>> GetAllUsersAsync()
-        {
-            return await _context.Users
-                .Select(u => new UserResponseDto
-                {
-                    Id = u.Id,
-                    Email = u.Email,
-                    FullName = u.FullName,
-                    Role = u.Role
-                })
-                .ToListAsync();
-        }
 
         public async Task<UserResponseDto> CreateUserAsync(CreateUserRequestDto requestDto)
         {
@@ -77,6 +65,32 @@ namespace FPTRewardSystem.API.Services
                 throw new NotFoundException($"Không tìm thấy User có id: {id}");
             _context.Remove(user);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<PagedResult<UserResponseDto>> GetUsersAsync(UserSearchQueryDto queryDto)
+        {
+            // 1. Tạo câu query thô chứa điều kiện lọc (chưa thực thi xuống DB)
+            var query = _context.Users.AsQueryable();
+            if (!string.IsNullOrEmpty(queryDto.SearchTerm))
+            {
+                query = query.Where(u => u.FullName.Contains(queryDto.SearchTerm) || u.Email.Contains(queryDto.SearchTerm));
+            }
+            // 2. Đếm tổng số dòng thỏa mãn điều kiện lọc (Câu lệnh thực thi thứ 1)
+            var totalCount = await query.CountAsync();
+            // 3. Phân trang và lấy dữ liệu thật (Câu lệnh thực thi thứ 2)
+            var items = await query
+                .Skip((queryDto.PageNumber - 1) * queryDto.PageSize)
+                .Take(queryDto.PageSize)
+                .Select(u => new UserResponseDto
+                {
+                    Id = u.Id,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Role = u.Role
+                })
+                .ToListAsync();
+            // 4. Bọc kết quả vào class PagedResult để trả về
+            return new PagedResult<UserResponseDto>(items, totalCount, queryDto.PageNumber, queryDto.PageSize);
         }
     }
 }

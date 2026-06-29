@@ -1,5 +1,7 @@
-﻿using FPTRewardSystem.API.Data;
+﻿using FluentValidation;
+using FPTRewardSystem.API.Data;
 using FPTRewardSystem.API.Dtos;
+using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,26 +14,21 @@ namespace FPTRewardSystem.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IValidator<UserSearchQueryDto> _validator;
         // Constructor: Nơi .NET Core tự động bơm DataContext vào
-        public UserController(IUserService userService)
+        // Inject Validator qua Constructor
+        public UserController(IUserService userService, IValidator<UserSearchQueryDto> validator)
         {
             _userService = userService;
+            _validator = validator;
         }
         [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<ActionResult<List<UserResponseDto>>> GetAll()
-        {
-            // Controller giờ chỉ làm nhiệm vụ gọi Service và trả kết quả
-            var result = await _userService.GetAllUsersAsync();
-            return Ok(result);
-        }
-
         [HttpPost]
         public async Task<ActionResult<UserResponseDto>> Create([FromBody] CreateUserRequestDto requestDto)
         {
             var result = await _userService.CreateUserAsync(requestDto);
             // Trả về HTTP Status Code 201 Created chuẩn RESTful
-            return CreatedAtAction(nameof(GetAll), new { id = result.Id }, result);
+            return CreatedAtAction(" ", new { id = result.Id }, result);
         }
 
         [HttpPut("{id}")]// {id} là tham số động trên URL (Route Parameter)
@@ -46,6 +43,18 @@ namespace FPTRewardSystem.API.Controllers
         {
             await _userService.DeleteUserAsync(id);
             return NoContent();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers([FromQuery] UserSearchQueryDto queryDto)
+        {
+            var validationResult = await _validator.ValidateAsync(queryDto);
+            if (!validationResult.IsValid)
+            {
+                throw new AppValidationException(validationResult.ToDictionary());
+            }
+            var result = await _userService.GetUsersAsync(queryDto);
+            return Ok(result);
         }
     }
 }

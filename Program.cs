@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>();
-// Thêm dòng này ngay bên dưới để bật tính năng tự động kiểm tra:
+// Bật tính năng tự động kiểm tra
 builder.Services.AddFluentValidationAutoValidation();
 // Đăng ký tầng Service vào DI Container
 builder.Services.AddScoped<IUserService, UserService>();

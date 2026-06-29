@@ -16,9 +16,7 @@ namespace FPTRewardSystem.API.Controllers
         private readonly IUserService _userService;
         private readonly IValidator<UserSearchQueryDto> _validator;
         // Constructor: Nơi .NET Core tự động bơm DataContext vào
-
         // Inject Validator qua Constructor
-
         public UserController(IUserService userService, IValidator<UserSearchQueryDto> validator)
         {
             _userService = userService;
@@ -55,7 +53,6 @@ namespace FPTRewardSystem.API.Controllers
             {
                 throw new AppValidationException(validationResult.ToDictionary());
             }
-
             var result = await _userService.GetUsersAsync(queryDto);
             return Ok(result);
         }

@@ -11,6 +11,6 @@ namespace FPTRewardSystem.API.Services
         Task UpdateUserAsync(Guid id, UpdateUserRequestDto requestDto);
         Task DeleteUserAsync(Guid id);
 
-        Task<List<UserResponseDto>> GetUsersAsync(UserSearchQueryDto queryDto);
+        Task<PagedResult<UserResponseDto>> GetUsersAsync(UserSearchQueryDto queryDto);
     }
 }

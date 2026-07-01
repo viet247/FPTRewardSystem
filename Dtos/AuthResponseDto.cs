@@ -2,7 +2,7 @@
 {
     public class AuthResponseDto
     {
-        public UserResponseDto userResponseDto { get; set; }
+        public UserResponseDto UserResponseDto { get; set; }
         public string Jwt { get; set; }
     }
 }

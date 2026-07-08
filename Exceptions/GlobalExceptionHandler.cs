@@ -46,6 +46,19 @@ namespace FPTRewardSystem.API.Exceptions
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
                 return true; // Báo hiệu đã xử lý xong lỗi này
             }
+
+            if (exception is BadRequestException badRequestEx)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Bad Request",
+                    Detail = badRequestEx.Message
+                };
+                await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                return true; // Báo hiệu đã xử lý xong lỗi này
+            }
             return false;
         }
     }

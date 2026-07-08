@@ -22,13 +22,13 @@ namespace FPTRewardSystem.API.Controllers
             _userService = userService;
             _validator = validator;
         }
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<UserResponseDto>> Create([FromBody] CreateUserRequestDto requestDto)
         {
             var result = await _userService.CreateUserAsync(requestDto);
             // Trả về HTTP Status Code 201 Created chuẩn RESTful
-            return CreatedAtAction(" ", new { id = result.Id }, result);
+            return Created($"/api/v1/user/{result.Id}", result);
         }
 
         [HttpPut("{id}")]// {id} là tham số động trên URL (Route Parameter)

@@ -2,7 +2,6 @@
 using FPTRewardSystem.API.Dtos;
 using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -57,7 +56,7 @@ namespace FPTRewardSystem.API.Services
             var secretKey = _configuration["Jwt:Key"];
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
-            // 2. Chọn thuật toán mã hóa để ký (Ví dụ: HmacSha256)
+            // 2. Chọn thuật toán mã hóa để ký (HmacSha256)
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // 3. Đóng gói thông tin User vào Claims

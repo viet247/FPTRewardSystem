@@ -52,6 +52,20 @@ namespace FPTRewardSystem.API.Controllers
             await _userService.DeleteUserAsync(id);
             return NoContent();
         }
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserById(Guid id)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserRole != "Admin" && Guid.Parse(currentUserId) != id)
+            {
+                throw new ForbiddenException($"Ban khong co quyen xem chi tiet User co id: {id}");
+            }
+            var result =  await _userService.GetUserByIdAsync(id);
+            return Ok(result);
+        }
+
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetUsers([FromQuery] UserSearchQueryDto queryDto)

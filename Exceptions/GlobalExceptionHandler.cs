@@ -59,6 +59,19 @@ namespace FPTRewardSystem.API.Exceptions
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
                 return true; // Báo hiệu đã xử lý xong lỗi này
             }
+
+            if (exception is ForbiddenException forbiddenEx)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Forbidden",
+                    Detail = forbiddenEx.Message
+                };
+                await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                return true; // Báo hiệu đã xử lý xong lỗi này
+            }
             return false;
         }
     }

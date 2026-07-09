@@ -6,6 +6,7 @@ using FPTRewardSystem.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace FPTRewardSystem.API.Controllers
 {
@@ -22,7 +23,7 @@ namespace FPTRewardSystem.API.Controllers
             _userService = userService;
             _validator = validator;
         }
-        //[Authorize(Roles = "Admin")]
+        [AllowAnonymous]
         [HttpPost]
         public async Task<ActionResult<UserResponseDto>> Create([FromBody] CreateUserRequestDto requestDto)
         {
@@ -32,19 +33,26 @@ namespace FPTRewardSystem.API.Controllers
         }
 
         [HttpPut("{id}")]// {id} là tham số động trên URL (Route Parameter)
+        [Authorize]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserRequestDto requestDto)
         {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (currentUserRole != "Admin" && Guid.Parse(currentUserId) != id)
+            {
+                throw new ForbiddenException("Ban khong co quyen Update!");
+            }
             await _userService.UpdateUserAsync(id, requestDto);
             return NoContent();
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _userService.DeleteUserAsync(id);
             return NoContent();
         }
-
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetUsers([FromQuery] UserSearchQueryDto queryDto)
         {

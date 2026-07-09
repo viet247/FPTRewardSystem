@@ -72,6 +72,8 @@ namespace FPTRewardSystem.API.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddDays(1), // Token có giá trị trong 1 ngày
+                Issuer = _configuration["Jwt:Issuer"],     // Đọc cấu hình Issuer từ appsettings.json
+                Audience = _configuration["Jwt:Audience"], // Đọc cấu hình Audience từ appsettings.json
                 SigningCredentials = creds
             };
 

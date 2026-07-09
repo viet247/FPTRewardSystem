@@ -4,6 +4,7 @@ using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System.Security.Claims;
 
 namespace FPTRewardSystem.API.Services
 {
@@ -91,6 +92,22 @@ namespace FPTRewardSystem.API.Services
                 .ToListAsync();
             // 4. Bọc kết quả vào class PagedResult để trả về
             return new PagedResult<UserResponseDto>(items, totalCount, queryDto.PageNumber, queryDto.PageSize);
+        }
+
+        public async Task<UserResponseDto> GetUserByIdAsync(Guid id)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null)
+            {
+                throw new NotFoundException($"Không tìm thấy User có id: {id}");
+            }
+            return new UserResponseDto()
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Role = user.Role
+            };
         }
     }
 }

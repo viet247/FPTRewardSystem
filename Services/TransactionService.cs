@@ -3,6 +3,7 @@ using FPTRewardSystem.API.Dtos;
 using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace FPTRewardSystem.API.Services
 {
@@ -16,27 +17,37 @@ namespace FPTRewardSystem.API.Services
         }
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Id == senderID);
+            var user = _context.Users.Include(u => u.Wallet).FirstOrDefault(u => u.Id == senderID);
             if (user == null)
             {
                 throw new NotFoundException($"Không tìm thấy User có id: {senderID}");
             }
-            var fromWalletID = user.Wallet.Id;
-
-            // Bước 2: tìm ví người gửi và ví người nhận từ db
-            var fromWallet = await _context.Wallets.FindAsync(fromWalletID);
+            if (user.Wallet == null)
+            {
+                throw new NotFoundException($"Không tìm thấy Wallet với User có id: {senderID}");
+            }
+            // Bước 1: tìm ví người gửi và ví người nhận từ db
+            var fromWallet = user.Wallet;
             var toWallet = await _context.Wallets.FindAsync(requestDto.ToWalletID);
 
-            // Bước 3: kiểm tra ví người gửi và ví người nhận có tồn tại không?
+            // Bước 2: kiểm tra ví người gửi và ví người nhận có tồn tại không?
             if (fromWallet == null || toWallet == null)
             {
                 throw new BadRequestException("Thông tin người gửi hoặc người nhận không hợp lệ!");
             }
-                
+
+            // Bước 3: kiểm tra xem người nhận có phải người gửi không?
+            if (fromWallet == toWallet)
+            {
+                throw new TransactionBusinessException("Người nhận phải khác người gửi.");
+            }
+
 
             // Bước 4: kiểm tra số dư ví người gửi có đủ chuyển không?
-            //if (fromWallet.Balance < amount)
-            //    return false;
+            if (fromWallet.Balance < requestDto.Amount)
+            {
+                throw new TransactionBusinessException("Số dư của bạn không đủ để thực hiện giao dịch này!");
+            }
 
             // Bước 5: thực hiện chuyển điểm(trừ điểm ví người gửi, cộng điểm ví người nhận)
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -53,8 +64,8 @@ namespace FPTRewardSystem.API.Services
                     Amount = requestDto.Amount,
                     Description = requestDto.Description,
                     CreatedAt = DateTime.UtcNow,
-                    SenderWalletId = fromWalletID,
-                    ReceiverWalletId = requestDto.ToWalletID
+                    SenderWalletId = fromWallet.Id,
+                    ReceiverWalletId = toWallet.Id
                 };
                 _context.Transactions.Add(history);
 

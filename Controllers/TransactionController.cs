@@ -22,7 +22,7 @@ namespace FPTRewardSystem.API.Controllers
             _transactionService = transactionService;
             _validator = validator;
         }
-        //[Authorize(Roles = "Admin,User")]
+        [Authorize(Roles = "Admin,Employee")]
         [HttpPost]
         public async Task<IActionResult> TransferPoint(TransactionRequestDto requestDto)
         {

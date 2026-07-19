@@ -14,6 +14,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>
 // Đăng ký tầng Service vào DI Container
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>

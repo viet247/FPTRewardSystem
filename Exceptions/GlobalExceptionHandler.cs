@@ -72,6 +72,18 @@ namespace FPTRewardSystem.API.Exceptions
                 await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
                 return true; // Báo hiệu đã xử lý xong lỗi này
             }
+            if (exception is TransactionBusinessException transactionEx)
+            {
+                httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                var problemDetails = new ProblemDetails
+                {
+                    Status = StatusCodes.Status422UnprocessableEntity,
+                    Title = "Unprocessable entity",
+                    Detail = exception.Message
+                };
+                await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+                return true; // Báo hiệu đã xử lý xong lỗi này
+            }
             return false;
         }
     }

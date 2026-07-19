@@ -17,7 +17,7 @@ namespace FPTRewardSystem.API.Services
         }
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
-            var user = _context.Users.Include(u => u.Wallet).FirstOrDefault(u => u.Id == senderID);
+            var user = await _context.Users.Include(u => u.Wallet).FirstOrDefaultAsync(u => u.Id == senderID);
             if (user == null)
             {
                 throw new NotFoundException($"Không tìm thấy User có id: {senderID}");
@@ -85,7 +85,7 @@ namespace FPTRewardSystem.API.Services
             {
                 // Nếu có bất kỳ lỗi nào xảy ra, hủy bỏ toàn bộ thay đổi
                 await transaction.RollbackAsync();
-                return null;
+                throw;
             }
         }
 

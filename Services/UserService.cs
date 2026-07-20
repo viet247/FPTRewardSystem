@@ -31,8 +31,11 @@ namespace FPTRewardSystem.API.Services
                 FullName = requestDto.FullName,
                 Email = requestDto.Email,
                 PasswordHash = securedPasswordHash,
-                Role = UserRole.Employee
-
+                Role = UserRole.Employee,
+                Wallet = new Wallet
+                {
+                    Balance = 0
+                }
             };
             // Đánh dấu thêm mới vào bộ nhớ
             _context.Users.Add(newUser);

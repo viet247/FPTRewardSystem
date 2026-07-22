@@ -35,7 +35,19 @@ namespace FPTRewardSystem.API.Services
             {
                 throw new BadRequestException("Mật khẩu không chính xác.");
             }
+            // Tạo Access Token(JWT)
             string jwtToken = GenerateJwtToken(user);
+            // Tạo Refresh Token ngẫu nhiên
+            var refreshToken = new RefreshToken
+            {
+                Token = Guid.NewGuid().ToString("N"), // Chuỗi random duy nhất
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false,
+                UserId = user.Id
+            };
+            // Lưu RefreshToken vào DB
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
             return new AuthResponseDto
             {
                 UserResponseDto = new UserResponseDto
@@ -45,7 +57,8 @@ namespace FPTRewardSystem.API.Services
                     Email = user.Email,
                     Role = user.Role
                 },
-                Jwt = jwtToken
+                Jwt = jwtToken,
+                RefreshToken = refreshToken.Token
             };
         }
 

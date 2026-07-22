@@ -36,7 +36,7 @@ namespace FPTRewardSystem.API.Controllers
             return Ok(result);
         }
         [HttpPost("logout")] // Đường dẫn sẽ là: api/v1/auth//logout
-        public async Task<IActionResult> Logout([FromBody] LogoutReqestDto logoutRequestDto)
+        public async Task<IActionResult> Logout([FromBody] LogoutRequestDto logoutRequestDto)
         {
             await _authService.Logout(logoutRequestDto);
             return Ok(new { message = "Đăng xuất thành công" });

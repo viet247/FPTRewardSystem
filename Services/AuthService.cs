@@ -62,7 +62,7 @@ namespace FPTRewardSystem.API.Services
                 RefreshToken = refreshToken.Token
             };
         }
-        public async Task Logout(LogoutReqestDto logoutRequestDto)
+        public async Task Logout(LogoutRequestDto logoutRequestDto)
         {
             // Tìm refresh Token trong DB
             var tokenInDb = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == logoutRequestDto.RefreshToken);

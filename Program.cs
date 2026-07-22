@@ -6,8 +6,18 @@ using FPTRewardSystem.API.Services;
 using FPTRewardSystem.API.Validator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Cấu hình Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information() // Mức log tối thiểu
+    .WriteTo.Console() // In ra Console
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day) // Tạo file log theo ngày
+    .CreateLogger();
+// Khai báo với WebApplication dùng Serilog thay cho Logger mặc định
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>();
@@ -48,6 +58,7 @@ app.UseAuthentication(); // Ai đang gọi? (Xác thực)
 app.UseAuthorization(); // Có quyền làm gì? (Phân quyền)
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseSerilogRequestLogging(); // Tự động log lại mọi HTTP Request (URL, Method, Status Code, Time)
 
 // app.UseHttpsRedirection();
 

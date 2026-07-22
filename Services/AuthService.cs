@@ -2,6 +2,7 @@
 using FPTRewardSystem.API.Dtos;
 using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -61,7 +62,18 @@ namespace FPTRewardSystem.API.Services
                 RefreshToken = refreshToken.Token
             };
         }
+        public async Task Logout(LogoutReqestDto logoutRequestDto)
+        {
+            // Tìm refresh Token trong DB
+            var tokenInDb = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == logoutRequestDto.RefreshToken);
 
+            // Nếu tìm thấy và chưa bị hủy thì tiến hành thu hồi
+            if (tokenInDb != null && !tokenInDb.IsRevoked)
+            {
+                tokenInDb.IsRevoked = true;
+                await _context.SaveChangesAsync(); // Thực hiện câu lệnh Update xuống DB
+            }
+        }
         private string GenerateJwtToken(User user)
         {
             

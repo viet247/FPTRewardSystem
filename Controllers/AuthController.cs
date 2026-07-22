@@ -35,6 +35,12 @@ namespace FPTRewardSystem.API.Controllers
             // Trả về HTTP Status Code 200 OK kèm theo dữ liệu User + JWT
             return Ok(result);
         }
+        [HttpPost("logout")] // Đường dẫn sẽ là: api/v1/auth//logout
+        public async Task<IActionResult> Logout([FromBody] LogoutReqestDto logoutRequestDto)
+        {
+            await _authService.Logout(logoutRequestDto);
+            return Ok(new { message = "Đăng xuất thành công" });
+        }
 
     }
 }

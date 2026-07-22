@@ -2,6 +2,7 @@
 using FPTRewardSystem.API.Dtos;
 using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -35,7 +36,19 @@ namespace FPTRewardSystem.API.Services
             {
                 throw new BadRequestException("Mật khẩu không chính xác.");
             }
+            // Tạo Access Token(JWT)
             string jwtToken = GenerateJwtToken(user);
+            // Tạo Refresh Token ngẫu nhiên
+            var refreshToken = new RefreshToken
+            {
+                Token = Guid.NewGuid().ToString("N"), // Chuỗi random duy nhất
+                ExpiryDate = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false,
+                UserId = user.Id
+            };
+            // Lưu RefreshToken vào DB
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
             return new AuthResponseDto
             {
                 UserResponseDto = new UserResponseDto
@@ -45,10 +58,22 @@ namespace FPTRewardSystem.API.Services
                     Email = user.Email,
                     Role = user.Role
                 },
-                Jwt = jwtToken
+                Jwt = jwtToken,
+                RefreshToken = refreshToken.Token
             };
         }
+        public async Task Logout(LogoutRequestDto logoutRequestDto)
+        {
+            // Tìm refresh Token trong DB
+            var tokenInDb = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == logoutRequestDto.RefreshToken);
 
+            // Nếu tìm thấy và chưa bị hủy thì tiến hành thu hồi
+            if (tokenInDb != null && !tokenInDb.IsRevoked)
+            {
+                tokenInDb.IsRevoked = true;
+                await _context.SaveChangesAsync(); // Thực hiện câu lệnh Update xuống DB
+            }
+        }
         private string GenerateJwtToken(User user)
         {
             

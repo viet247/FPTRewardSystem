@@ -11,6 +11,8 @@ namespace FPTRewardSystem.API.Data
         public DbSet<Wallet> Wallets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<User> Users { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Cấu hình quan hệ cho Transaction (Vì có 2 liên kết đến cùng bảng Wallet)

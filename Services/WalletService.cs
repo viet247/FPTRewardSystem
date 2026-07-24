@@ -1,7 +1,6 @@
 ﻿using FPTRewardSystem.API.Data;
 using FPTRewardSystem.API.Dtos;
 using FPTRewardSystem.API.Exceptions;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace FPTRewardSystem.API.Services
@@ -18,16 +17,19 @@ namespace FPTRewardSystem.API.Services
         }
         public async Task<WalletResponseDto> GetWalletByUserIdAsync(string userId)
         {
-            var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.UserId == Guid.Parse(userId));
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                throw new BadRequestException("User ID không đúng định dạng GUID");
+            }
+            var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.UserId == userGuid);
             if (wallet == null)
             {
                 throw new NotFoundException($"Không tìm thấy Wallet");
             }
-            var walletResponseDto = new WalletResponseDto
+            return new WalletResponseDto
             {
                 Ballance = wallet.Balance
             };
-            return walletResponseDto;
         }
     }
 }

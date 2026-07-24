@@ -8,7 +8,7 @@ using System.Security.Claims;
 namespace FPTRewardSystem.API.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")] // Duong dan se la: api/v1/user
+    [Route("api/v1/[controller]")] // Duong dan se la: api/v1/wallet
     public class WalletController : ControllerBase
     {
         private readonly IWalletService _walletService;
@@ -16,7 +16,7 @@ namespace FPTRewardSystem.API.Controllers
         {
             _walletService = walletService;
         }
-        //[Authorize]
+        [Authorize]
         [HttpGet("ballance")]
         public async Task<IActionResult> GetWalletBalance()
         {

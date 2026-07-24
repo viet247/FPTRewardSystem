@@ -15,6 +15,36 @@ namespace FPTRewardSystem.API.Services
         {
             _context = context;
         }
+
+        public async Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize)
+        {
+            var user = _context.Users.Include(u => u.Wallet).FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+            {
+                throw new NotFoundException($"User không tồn tại");
+            }
+            var wallet = user.Wallet;
+            if (wallet == null)
+            {
+                throw new NotFoundException($"Wallet không tồn tại");
+            }
+            var query = _context.Transactions.AsQueryable();
+            query = query.Where(t => t.SenderWalletId == wallet.Id || t.ReceiverWalletId == wallet.Id);
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize)
+                                   .Take(pageSize)
+                                   .Select(t => new TransactionHistoryResponseDto
+                                   {
+                                       Id = t.Id,
+                                       Amount = t.Amount,
+                                       Description = t.Description,
+                                       CreatedAt = t.CreatedAt,
+                                       SenderName = t.SenderWallet.User.FullName,
+                                       ReceiverName = t.ReceiverWallet.User.FullName
+                                   }).ToListAsync();
+            return new PagedResult<TransactionHistoryResponseDto>(items, totalCount, pageNumber, pageSize);
+        }
+
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
             var user = await _context.Users.Include(u => u.Wallet).FirstOrDefaultAsync(u => u.Id == senderID);
@@ -88,6 +118,5 @@ namespace FPTRewardSystem.API.Services
                 throw;
             }
         }
-
     }
 }

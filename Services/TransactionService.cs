@@ -15,6 +15,26 @@ namespace FPTRewardSystem.API.Services
         {
             _context = context;
         }
+
+        public async Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize)
+        {   
+            // lọc trực tiếp từ bảng Transactions dựa trên UserId gắn với Wallet
+            var query = _context.Transactions.AsNoTracking().Where(t => t.SenderWallet.UserId == userId || t.ReceiverWallet.UserId == userId);
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize)
+                                   .Take(pageSize)
+                                   .Select(t => new TransactionHistoryResponseDto
+                                   {
+                                       Id = t.Id,
+                                       Amount = t.Amount,
+                                       Description = t.Description,
+                                       CreatedAt = t.CreatedAt,
+                                       SenderName = t.SenderWallet.User.FullName,
+                                       ReceiverName = t.ReceiverWallet.User.FullName
+                                   }).ToListAsync();
+            return new PagedResult<TransactionHistoryResponseDto>(items, totalCount, pageNumber, pageSize);
+        }
+
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
             var user = await _context.Users.Include(u => u.Wallet).FirstOrDefaultAsync(u => u.Id == senderID);
@@ -88,6 +108,5 @@ namespace FPTRewardSystem.API.Services
                 throw;
             }
         }
-
     }
 }

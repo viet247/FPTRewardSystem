@@ -37,7 +37,7 @@ namespace FPTRewardSystem.API.Controllers
             var result = await _transactionService.TransferPointAsync(senderID, requestDto);
             return Ok(result);
         }
-        [Authorize(Roles = "Admin,Employee")] // Cần check thêm đúng employee
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetTransactions([FromQuery] TransactionHistoryRequestDto requestDto)
         {
@@ -46,19 +46,14 @@ namespace FPTRewardSystem.API.Controllers
             {
                 throw new AppValidationException(validationResult.ToDictionary());
             }
+
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (currentUserId == null)
+            if(!Guid.TryParse(currentUserId, out var userId))
             {
-                throw new NotFoundException($"Không có User");
-            }
-            Guid userId;
-            if(!Guid.TryParse(currentUserId, out userId))
-            {
-                throw new BadRequestException($"User ID không hợp lệ");
+                return Unauthorized();
             }
             var result = await _transactionService.GetTransactionsAsync(userId, requestDto.PageNumber, requestDto.PageSize);
             return Ok(result);
         }
-        
     }
 }

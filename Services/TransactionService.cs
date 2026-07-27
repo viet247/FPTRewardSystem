@@ -17,19 +17,9 @@ namespace FPTRewardSystem.API.Services
         }
 
         public async Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize)
-        {
-            var user = _context.Users.Include(u => u.Wallet).FirstOrDefault(u => u.Id == userId);
-            if (user == null)
-            {
-                throw new NotFoundException($"User không tồn tại");
-            }
-            var wallet = user.Wallet;
-            if (wallet == null)
-            {
-                throw new NotFoundException($"Wallet không tồn tại");
-            }
-            var query = _context.Transactions.AsQueryable();
-            query = query.Where(t => t.SenderWalletId == wallet.Id || t.ReceiverWalletId == wallet.Id);
+        {   
+            // lọc trực tiếp từ bảng Transactions dựa trên UserId gắn với Wallet
+            var query = _context.Transactions.AsNoTracking().Where(t => t.SenderWallet.UserId == userId || t.ReceiverWallet.UserId == userId);
             var totalCount = await query.CountAsync();
             var items = await query.Skip((pageNumber - 1) * pageSize)
                                    .Take(pageSize)

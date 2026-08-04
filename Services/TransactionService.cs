@@ -35,6 +35,51 @@ namespace FPTRewardSystem.API.Services
             return new PagedResult<TransactionHistoryResponseDto>(items, totalCount, pageNumber, pageSize);
         }
 
+        public async Task<IssuePointsResponseDto> IssuePointsAsync(IssuePointsRequestDto requestDto)
+        {
+            // Lấy tất cả User kèm ví
+            var users = await _context.Users.Include(u => u.Wallet).ToListAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Cấp phát điểm hàng loạt
+                foreach (var u in users)
+                {
+                    // Cộng điểm vào Giving Wallet: thêm 1 ví nk
+                    u.Wallet.Balance = u.Wallet.Balance + requestDto.IssueAmountPerUser;
+                    var history = new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = requestDto.IssueAmountPerUser,
+                        Description = requestDto.Description,
+                        CreatedAt = requestDto.EffectiveDate,
+                        ReceiverWallet = u.Wallet,
+                        SenderWallet = null,
+                        SenderWalletId = null,
+                        ReceiverWalletId = u.Wallet.Id
+                    };
+                    _context.Transactions.Add(history);
+                }
+              
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new IssuePointsResponseDto
+                {
+                    ExecutedAt = requestDto.EffectiveDate,
+                    TargetMonth = requestDto.EffectiveDate.Month,
+                    IssueAmountPerUser = requestDto.IssueAmountPerUser,
+                    ToTalUsersProcessed = users.Count,
+                    TotalPointsIssued = users.Count * requestDto.IssueAmountPerUser,
+                    Message = requestDto.Description
+                };
+            }
+            catch(Exception e)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
             var user = await _context.Users.Include(u => u.Wallet).FirstOrDefaultAsync(u => u.Id == senderID);

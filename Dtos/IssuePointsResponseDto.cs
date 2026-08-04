@@ -3,7 +3,7 @@
     public class IssuePointsResponseDto
     {
         public DateTime ExecutedAt { get; set; }
-        public DateTime TargetMonth { get; set; }
+        public int TargetMonth { get; set; }
         public Decimal IssueAmountPerUser { get; set; }
         public int ToTalUsersProcessed { get; set; }
         public Decimal TotalPointsIssued { get; set; }

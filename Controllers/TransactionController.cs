@@ -58,7 +58,7 @@ namespace FPTRewardSystem.API.Controllers
         [HttpPost("issue-points")]
         public async Task<IActionResult> IssuePoints(IssuePointsRequestDto requestDto)
         {
-            
+
         }
 
     }

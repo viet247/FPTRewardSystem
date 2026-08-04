@@ -5,6 +5,7 @@ namespace FPTRewardSystem.API.Models
     {
         public Guid Id { get; set; }
         public decimal Balance { get; set; }
+        public WalletType Type { get; set; }
         public Guid UserId { get; set; } // Liên kết với User
         public User User { get; set; }
 

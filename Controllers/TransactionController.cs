@@ -48,12 +48,18 @@ namespace FPTRewardSystem.API.Controllers
             }
 
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if(!Guid.TryParse(currentUserId, out var userId))
+            if (!Guid.TryParse(currentUserId, out var userId))
             {
                 return Unauthorized();
             }
             var result = await _transactionService.GetTransactionsAsync(userId, requestDto.PageNumber, requestDto.PageSize);
             return Ok(result);
         }
+        [HttpPost("issue-points")]
+        public async Task<IActionResult> IssuePoints(IssuePointsRequestDto requestDto)
+        {
+            
+        }
+
     }
 }

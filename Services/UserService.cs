@@ -32,9 +32,10 @@ namespace FPTRewardSystem.API.Services
                 Email = requestDto.Email,
                 PasswordHash = securedPasswordHash,
                 Role = UserRole.Employee,
-                Wallet = new Wallet
+                Wallets = new List<Wallet>
                 {
-                    Balance = 0
+                    new Wallet {Type = WalletType.Giving, Balance = 0},
+                    new Wallet {Type = WalletType.Reward, Balance = 0}
                 }
             };
             // Đánh dấu thêm mới vào bộ nhớ

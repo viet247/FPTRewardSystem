@@ -18,11 +18,13 @@ namespace FPTRewardSystem.API.Controllers
         private readonly ITransactionService _transactionService;
         private readonly IValidator<TransactionRequestDto> _validator;
         private readonly IValidator<TransactionHistoryRequestDto> _transHisReqValidator;
-        public TransactionController(ITransactionService transactionService, IValidator<TransactionRequestDto> validator, IValidator<TransactionHistoryRequestDto> transHisReqValidator)
+        private readonly IValidator<IssuePointsRequestDto> _issuePointsReqValidator;
+        public TransactionController(ITransactionService transactionService, IValidator<TransactionRequestDto> validator, IValidator<TransactionHistoryRequestDto> transHisReqValidator, IValidator<IssuePointsRequestDto> issuePointsReqDto)
         {
             _transactionService = transactionService;
             _validator = validator;
             _transHisReqValidator = transHisReqValidator;
+            _issuePointsReqValidator = issuePointsReqDto;
         }
         [Authorize(Roles = "Admin,Employee")]
         [HttpPost("p2p")]
@@ -48,11 +50,24 @@ namespace FPTRewardSystem.API.Controllers
             }
 
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if(!Guid.TryParse(currentUserId, out var userId))
+            if (!Guid.TryParse(currentUserId, out var userId))
             {
                 return Unauthorized();
             }
             var result = await _transactionService.GetTransactionsAsync(userId, requestDto.PageNumber, requestDto.PageSize);
+            return Ok(result);
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpPost("issue-points")]
+        public async Task<IActionResult> IssuePoints(IssuePointsRequestDto requestDto)
+        {
+            var validationResult = await _issuePointsReqValidator.ValidateAsync(requestDto);
+            if (!validationResult.IsValid)
+            {
+                throw new AppValidationException(validationResult.ToDictionary());
+            }
+
+            var result = await _transactionService.IssuePointsAsync(requestDto);
             return Ok(result);
         }
     }

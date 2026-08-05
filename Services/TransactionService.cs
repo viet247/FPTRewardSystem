@@ -37,26 +37,34 @@ namespace FPTRewardSystem.API.Services
 
         public async Task<IssuePointsResponseDto> IssuePointsAsync(IssuePointsRequestDto requestDto)
         {
+            bool isAlreadyIssued = await _context.Transactions.AnyAsync(t => t.CreatedAt.Month == requestDto.EffectiveDate.Month
+                                                                          && t.CreatedAt.Year == requestDto.EffectiveDate.Year
+                                                                          && t.SenderWalletId == null);
+            if (isAlreadyIssued)
+            {
+                throw new TransactionBusinessException($"Điểm đã được cấp phát cho tháng {requestDto.EffectiveDate.Month} năm {requestDto.EffectiveDate.Year}. Vui lòng kiểm tra lại!");
+            }
             // Lấy tất cả User kèm ví
-            var users = await _context.Users.Include(u => u.Wallet).ToListAsync();
+            var users = await _context.Users.Include(u => u.Wallets).Where(u => u.Wallets.Any(w => w.Type == WalletType.Giving)).ToListAsync();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 // Cấp phát điểm hàng loạt
                 foreach (var u in users)
                 {
-                    // Cộng điểm vào Giving Wallet: thêm 1 ví nk
-                    u.Wallet.Balance = u.Wallet.Balance + requestDto.IssueAmountPerUser;
+                    // Cộng điểm vào Giving Wallet
+                    var givingWallet = u.Wallets.FirstOrDefault(w => w.Type == WalletType.Giving);
+                    givingWallet.Balance = givingWallet.Balance + requestDto.IssueAmountPerUser;
                     var history = new Transaction
                     {
                         Id = Guid.NewGuid(),
                         Amount = requestDto.IssueAmountPerUser,
                         Description = requestDto.Description,
                         CreatedAt = requestDto.EffectiveDate,
-                        ReceiverWallet = u.Wallet,
+                        ReceiverWallet = givingWallet,
                         SenderWallet = null,
                         SenderWalletId = null,
-                        ReceiverWalletId = u.Wallet.Id
+                        ReceiverWalletId = givingWallet.Id
                     };
                     _context.Transactions.Add(history);
                 }
@@ -82,19 +90,19 @@ namespace FPTRewardSystem.API.Services
 
         public async Task<TransactionResponseDto> TransferPointAsync(Guid senderID, TransactionRequestDto requestDto)
         {
-            var user = await _context.Users.Include(u => u.Wallet).FirstOrDefaultAsync(u => u.Id == senderID);
+            var user = await _context.Users.Include(u => u.Wallets).FirstOrDefaultAsync(u => u.Id == senderID);
+            // Bước 1: tìm ví người gửi và ví người nhận từ db
+            var fromWallet = user.Wallets.FirstOrDefault(w => w.Type == WalletType.Giving);
+            var toWallet = await _context.Wallets.FindAsync(requestDto.ToWalletID);
             if (user == null)
             {
                 throw new NotFoundException($"Không tìm thấy User có id: {senderID}");
             }
-            if (user.Wallet == null)
+            if (fromWallet == null)
             {
                 throw new NotFoundException($"Không tìm thấy Wallet với User có id: {senderID}");
             }
-            // Bước 1: tìm ví người gửi và ví người nhận từ db
-            var fromWallet = user.Wallet;
-            var toWallet = await _context.Wallets.FindAsync(requestDto.ToWalletID);
-
+            
             // Bước 2: kiểm tra ví người gửi và ví người nhận có tồn tại không?
             if (fromWallet == null || toWallet == null)
             {

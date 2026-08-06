@@ -4,16 +4,36 @@ using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FPTRewardSystem.API.Services
 {
     public class TransactionService : ITransactionService
     {
         private readonly AppDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IMemoryCache _cache;
         // Tiêm AppDbContext vào để làm việc với Database
-        public TransactionService(AppDbContext context)
+        public TransactionService(AppDbContext context, IHttpContextAccessor httpContextAccessor, IMemoryCache cache)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
+            _cache = cache;
+        }
+
+        public async Task<TransactionOtpResponseDto> GenerateOTPAsync()
+        {
+            //1. Lấy UserId từ Token của người dùng đang đăng nhập
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var otpCode = Random.Shared.Next(100000, 1000000).ToString();
+            var cacheKey = "OTP_" + userId;
+            _cache.Set(cacheKey, otpCode, TimeSpan.FromMinutes(5));
+            return new TransactionOtpResponseDto
+            {
+                OtpCode = otpCode,
+                ExpiresInSeconds = 300
+            };
+            // implement
         }
 
         public async Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize)

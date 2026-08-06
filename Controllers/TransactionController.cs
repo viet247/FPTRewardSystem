@@ -70,5 +70,11 @@ namespace FPTRewardSystem.API.Controllers
             var result = await _transactionService.IssuePointsAsync(requestDto);
             return Ok(result);
         }
+        [Authorize(Roles = "Employee")]
+        [HttpPost("generate-otp")]
+        public async Task<IActionResult> GenerateOTP()
+        {
+
+        }
     }
 }

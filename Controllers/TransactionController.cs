@@ -19,12 +19,14 @@ namespace FPTRewardSystem.API.Controllers
         private readonly IValidator<TransactionRequestDto> _validator;
         private readonly IValidator<TransactionHistoryRequestDto> _transHisReqValidator;
         private readonly IValidator<IssuePointsRequestDto> _issuePointsReqValidator;
-        public TransactionController(ITransactionService transactionService, IValidator<TransactionRequestDto> validator, IValidator<TransactionHistoryRequestDto> transHisReqValidator, IValidator<IssuePointsRequestDto> issuePointsReqDto)
+        private readonly IValidator<PaymentWithOtpRequestDto> _paymentWithOptReqValidator;
+        public TransactionController(ITransactionService transactionService, IValidator<TransactionRequestDto> validator, IValidator<TransactionHistoryRequestDto> transHisReqValidator, IValidator<IssuePointsRequestDto> issuePointsReqDto, IValidator<PaymentWithOtpRequestDto> paymentWithOptReqValidator)
         {
             _transactionService = transactionService;
             _validator = validator;
             _transHisReqValidator = transHisReqValidator;
             _issuePointsReqValidator = issuePointsReqDto;
+            _paymentWithOptReqValidator = paymentWithOptReqValidator;
         }
         [Authorize(Roles = "Admin,Employee")]
         [HttpPost("p2p")]
@@ -70,5 +72,26 @@ namespace FPTRewardSystem.API.Controllers
             var result = await _transactionService.IssuePointsAsync(requestDto);
             return Ok(result);
         }
+        [Authorize(Roles = "Employee")]
+        [HttpPost("generate-otp")]
+        public async Task<IActionResult> GenerateOTP()
+        {
+            var result = await _transactionService.GenerateOTPAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Merchant")]
+        [HttpPost("canteen-payment")]
+        public async Task<IActionResult> PayWithOtp(PaymentWithOtpRequestDto request)
+        {
+            var validationResult = await _paymentWithOptReqValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                throw new AppValidationException(validationResult.ToDictionary());
+            }
+
+            var result = await _transactionService.VerifyAndPayAsync(request);
+            return Ok(result);
+        } 
     }
 }

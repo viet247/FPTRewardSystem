@@ -4,16 +4,130 @@ using FPTRewardSystem.API.Exceptions;
 using FPTRewardSystem.API.Models;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace FPTRewardSystem.API.Services
 {
     public class TransactionService : ITransactionService
     {
         private readonly AppDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IMemoryCache _cache;
         // Tiêm AppDbContext vào để làm việc với Database
-        public TransactionService(AppDbContext context)
+        public TransactionService(AppDbContext context, IHttpContextAccessor httpContextAccessor, IMemoryCache cache)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
+            _cache = cache;
+        }
+
+        public async Task<PaymentWithOtpResponseDto> VerifyAndPayAsync(PaymentWithOtpRequestDto request)
+        {
+            // ==========================================
+            // BƯỚC 1: KIỂM TRA MÃ OTP TỪ CACHE
+            // ==========================================
+            var cacheKey = "OTP_" + request.UserId;
+
+            // 1.1. Lấy OTP từ Cache, nếu không có nghĩa là chưa tạo hoặc đã hết hạn
+            if (!_cache.TryGetValue(cacheKey, out string? cachedOtp))
+            {
+                throw new NotFoundException("OTP không tồn tại hoặc đã hết hạn. Vui lòng tạo OTP mới.");
+            }
+
+            // 1.2. So sánh mã OTP gửi lên với mã OTP lưu trong Cache
+            if (cachedOtp != request.Otp)
+            {
+                throw new TransactionBusinessException("Mã OTP không khớp.");
+            }
+
+            // ==========================================
+            // BƯỚC 2: TÌM USER VÀ KIỂM TRA SỐ DƯ VÍ
+            // ==========================================
+            var user = await _context.Users
+                .Include(u => u.Wallets)
+                .FirstOrDefaultAsync(u => u.Id.ToString() == request.UserId);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Không tìm thấy thông tin người dùng.");
+            }
+
+            var userRewardWallet = user.Wallets.FirstOrDefault(w => w.Type == WalletType.Reward);
+            if (userRewardWallet == null || userRewardWallet.Balance < request.Amount)
+            {
+                throw new TransactionBusinessException("Số dư của bạn không đủ để thực hiện giao dịch này!");
+            }
+
+            // ==========================================
+            // BƯỚC 3: TÌM MERCHANT VÀ VÍ NHẬN TIỀN
+            // ==========================================
+            var merchant = await _context.MerchantProfiles
+                .Include(m => m.Wallets)
+                .FirstOrDefaultAsync(m => m.Id.ToString() == request.MerchantId);
+
+            if (merchant == null)
+            {
+                throw new NotFoundException("Không tìm thấy thông tin Merchant.");
+            }
+
+            var merchantRewardWallet = merchant.Wallets.FirstOrDefault(w => w.Type == WalletType.Reward);
+            // ==========================================
+            // BƯỚC 4: THỰC HIỆN GIAO DỊCH (TRANSACTION)
+            // ==========================================
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 4.1. Trừ tiền ví người mua & Cộng tiền ví người bán
+                userRewardWallet.Balance -= request.Amount;
+                merchantRewardWallet.Balance += request.Amount;
+
+                // 4.2. Xóa mã OTP trong Cache ngay sau khi dùng xong (chống Replay Attack)
+                _cache.Remove(cacheKey);
+
+                // 4.3. Tạo bản ghi Lịch sử giao dịch (Transaction History)
+                var history = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    Amount = request.Amount,
+                    Description = "Thanh toán tại canteen",
+                    CreatedAt = DateTime.UtcNow,
+                    SenderWalletId = userRewardWallet.Id,
+                    ReceiverWalletId = merchantRewardWallet.Id
+                };
+                _context.Transactions.Add(history);
+
+                // 4.4. Lưu thay đổi vào CSDL và Commit Transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // 4.5. Trả về kết quả thanh toán cho Client
+                return new PaymentWithOtpResponseDto
+                {
+                    TransactionId = history.Id.ToString(),
+                    AmountPaid = request.Amount,
+                    PaymentTime = history.CreatedAt,
+                    RemainingBalance = userRewardWallet.Balance
+                };
+            }
+            catch (Exception)
+            {
+                // Nếu có bất kỳ lỗi nào xảy ra trong quá trình xử lý, Hoàn tác (Rollback) mọi thay đổi
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task<TransactionOtpResponseDto> GenerateOTPAsync()
+        {
+            //1. Lấy UserId từ Token của người dùng đang đăng nhập
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var otpCode = Random.Shared.Next(100000, 1000000).ToString();
+            var cacheKey = "OTP_" + userId;
+            _cache.Set(cacheKey, otpCode, TimeSpan.FromMinutes(5));
+            return new TransactionOtpResponseDto
+            {
+                OtpCode = otpCode,
+                ExpiresInSeconds = 300
+            };
         }
 
         public async Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize)

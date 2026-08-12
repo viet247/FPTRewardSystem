@@ -52,6 +52,8 @@ builder.Services.AddAuthentication(options =>
 // Thêm dịch vụ vào DI Container
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 var app = builder.Build();
 // Kích hoạt Middleware
 app.UseExceptionHandler(); // Xử lý lỗi

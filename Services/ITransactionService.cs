@@ -8,5 +8,6 @@ namespace FPTRewardSystem.API.Services
         Task<PagedResult<TransactionHistoryResponseDto>> GetTransactionsAsync(Guid userId, int pageNumber, int pageSize);
         Task<IssuePointsResponseDto> IssuePointsAsync(IssuePointsRequestDto requestDto);
         Task<TransactionOtpResponseDto> GenerateOTPAsync();
+        Task<PaymentWithOtpResponseDto> VerifyAndPayAsync(PaymentWithOtpRequestDto request);
     }
 }

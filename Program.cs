@@ -28,8 +28,11 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Thay UseSqlServer bằng UseNpgsql
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Cấu hình xác thực bằng JWT Bearer Token
 builder.Services.AddAuthentication(options =>
 {
@@ -54,13 +57,28 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 var app = builder.Build();
 // Kích hoạt Middleware
 app.UseExceptionHandler(); // Xử lý lỗi
 app.UseAuthentication(); // Ai đang gọi? (Xác thực)
+app.UseCors("AllowAll");
 app.UseAuthorization(); // Có quyền làm gì? (Phân quyền)
+// Cho phép hiển thị Swagger UI ngay cả khi đã Deploy lên Cloud
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "FPTRewardSystem API v1");
+    c.RoutePrefix = string.Empty; // Mở link Web API là vào thẳng trang Swagger ngay
+});
 app.UseSerilogRequestLogging(); // Tự động log lại mọi HTTP Request (URL, Method, Status Code, Time)
 
 // app.UseHttpsRedirection();

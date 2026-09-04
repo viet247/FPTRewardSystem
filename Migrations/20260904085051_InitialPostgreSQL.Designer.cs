@@ -3,17 +3,17 @@ using System;
 using FPTRewardSystem.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace FPTRewardSystem.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527030313_AddMerchantProfileTable")]
-    partial class AddMerchantProfileTable
+    [Migration("20260904085051_InitialPostgreSQL")]
+    partial class InitialPostgreSQL
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,56 +21,82 @@ namespace FPTRewardSystem.API.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.7")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.MerchantProfile", b =>
                 {
-                    b.Property<Guid>("ID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("StoreName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("MerchantProfiles");
+                });
+
+            modelBuilder.Entity("FPTRewardSystem.API.Models.RefreshToken", b =>
+                {
+                    b.Property<Guid>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("ID");
 
-                    b.HasIndex("UserID")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
-                    b.ToTable("MerchantProfile");
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("ReceiverWalletId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("SenderWalletId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -83,46 +109,52 @@ namespace FPTRewardSystem.API.Migrations
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.User", b =>
                 {
-                    b.Property<Guid>("ID")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Role")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.ToTable("User");
+                    b.ToTable("User", (string)null);
                 });
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.Wallet", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Balance")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid?>("MerchantProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("MerchantProfileId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Wallets");
                 });
@@ -131,7 +163,18 @@ namespace FPTRewardSystem.API.Migrations
                 {
                     b.HasOne("FPTRewardSystem.API.Models.User", "User")
                         .WithOne("MerchantProfile")
-                        .HasForeignKey("FPTRewardSystem.API.Models.MerchantProfile", "UserID")
+                        .HasForeignKey("FPTRewardSystem.API.Models.MerchantProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FPTRewardSystem.API.Models.RefreshToken", b =>
+                {
+                    b.HasOne("FPTRewardSystem.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -158,11 +201,22 @@ namespace FPTRewardSystem.API.Migrations
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.Wallet", b =>
                 {
-                    b.HasOne("FPTRewardSystem.API.Models.User", null)
-                        .WithOne("Wallet")
-                        .HasForeignKey("FPTRewardSystem.API.Models.Wallet", "UserId")
+                    b.HasOne("FPTRewardSystem.API.Models.MerchantProfile", null)
+                        .WithMany("Wallets")
+                        .HasForeignKey("MerchantProfileId");
+
+                    b.HasOne("FPTRewardSystem.API.Models.User", "User")
+                        .WithMany("Wallets")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FPTRewardSystem.API.Models.MerchantProfile", b =>
+                {
+                    b.Navigation("Wallets");
                 });
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.User", b =>
@@ -170,8 +224,7 @@ namespace FPTRewardSystem.API.Migrations
                     b.Navigation("MerchantProfile")
                         .IsRequired();
 
-                    b.Navigation("Wallet")
-                        .IsRequired();
+                    b.Navigation("Wallets");
                 });
 
             modelBuilder.Entity("FPTRewardSystem.API.Models.Wallet", b =>
